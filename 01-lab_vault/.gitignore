@@ -1,0 +1,7 @@
+vault/
+.env
+*.hcl
+*.cert.pem
+*.csr
+*.asdf
+*.crt
