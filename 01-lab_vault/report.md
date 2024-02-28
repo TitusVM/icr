@@ -369,6 +369,9 @@ A screenshot for proof:
 ![Trying to create root ca with toto](trying_root_ca_with_toto.png)
 
 # Questions
+These questions were inspired from: https://developer.hashicorp.com/vault/docs/internals/security
+
+
 1) How is the root key and the encryption key used to secure Vault?
 
 The **root key** (secret shares) is only used for unsealing the Vault. It is generally split into multiple shares for enhanced security (e.g., 3 of 5 required). In this lab, we used 6, one for each Safety Officer. These keys are **never used for encryption**.
@@ -383,7 +386,7 @@ Key rotation stands for regularly changing the encryption key used to protect da
 * Event-driven: Keys are rotated in response to specific events, such as a security incident or system upgrade.
 * Risk-based: Rotation is triggered based on the sensitivity of the data being stored, with more frequent rotation for highly sensitive data.
 
-3)
+3) What can you say about the confidentiality of data in the storage backend? How is it done?
 
 There are multiple layers to how vault treats its claims towards confidentiality:
 
@@ -392,3 +395,13 @@ There are multiple layers to how vault treats its claims towards confidentiality
 * **Encryption**: The security barrier encrypts the data using a strong cipher (e.g., 256-bit AES) before storing it.
 * **Key Management**: The encryption key used by the barrier is never stored in the backend, further enhancing security.
 
+Overall it is a very efficient way of hindering unallowed access to the vault.
+
+1) What can you say about the security of Vault against an adversary that analyses the memory of
+the server that runs Vault?
+
+To quote the documentation:
+
+* Protecting against memory analysis of a running Vault. If an attacker is able to inspect the memory state of a running Vault instance, then the confidentiality of data may be compromised.
+
+This happening is highly unlikely, but should it happen, it would not be great.
