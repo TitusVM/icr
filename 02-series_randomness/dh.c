@@ -16,7 +16,7 @@ void handleErrors(void)
 }
 
 /**
- * Encode <length> bits of <input> using base64. Assigns memory for the return value
+ * Encode <length> bits of <input> using base64. Allocates memory for output.
  */
 char* base64_encode(const unsigned char *input, int length)
 {
@@ -35,7 +35,6 @@ char* base64_encode(const unsigned char *input, int length)
         buff[bptr->length-1] = 0;
 
         BIO_free_all(b64);
-
         return buff;
 }
 
@@ -45,23 +44,62 @@ char* base64_encode(const unsigned char *input, int length)
  * The result is stored into <*pSecret> (memory is allocated) and this secret has length <*secretLength>
  */
 void computeSecret(EVP_PKEY *keyPair, EVP_PKEY *peerPublicKey, unsigned char **pSecret, size_t *secretLength){
-        //TODO
+        EVP_PKEY_CTX *ctx; //context
+        /* Put key pair*/
+        if(!(ctx = EVP_PKEY_CTX_new(keyPair, NULL))) handleErrors();
+
+        if (EVP_PKEY_derive_init(ctx) !=  1){
+                handleErrors();
+        }
+        if (EVP_PKEY_derive_set_peer(ctx, peerPublicKey) != 1){
+                handleErrors();
+        }
+
+        /* Determine buffer length */
+        if (EVP_PKEY_derive(ctx, NULL, secretLength) != 1){
+                handleErrors();
+        }
+
+        *pSecret = OPENSSL_malloc(*secretLength);
+
+        if (!*pSecret){
+                printf("Malloc error\n");
+                handleErrors();
+        }
+
+        if (EVP_PKEY_derive(ctx, *pSecret, secretLength) != 1){
+                handleErrors();
+        }
+        EVP_PKEY_CTX_free(ctx);
+        /* Shared secret is secretLength bytes written to buffer secret */
 }
 
 
 /**
- * Generates DH keys. The private part (g, g^x) is stored in <*privateKeyPair> and the public part in a file named <publicKeyFileName> in PEM format. 
+ * Generates DH keys. The private part (g, g^x) is stored in <*privateKeyPair> and the public part in a file named <publicKeyFileName> in PEM format.
  * The context <ctx> has to be provided. 
  */
 void generateKeys(EVP_PKEY_CTX* ctx, EVP_PKEY** privateKeyPair, const char* publicKeyFileName){
-        //TODO
+        if(NULL == (*privateKeyPair = EVP_PKEY_new())) 
+                handleErrors();
+        if(1 != EVP_PKEY_keygen(ctx, privateKeyPair)) 
+                handleErrors(); 
+        FILE *file = fopen(publicKeyFileName, "w");
+        if(!file){
+                fprintf(stderr, "error opening file %s\n", publicKeyFileName);
+                abort();
+        }
+        PEM_write_PUBKEY(file, *privateKeyPair); 
+        fclose(file);
 }
 
 /**
  * Loads the public key <publicKey> given in PEM format from the file <publicKeyFilename>
  */
 void receivePublicKey(EVP_PKEY** publicKey, const char* publicKeyFileName){
-        //TODO
+        FILE* file = fopen(publicKeyFileName, "r");
+        *publicKey = PEM_read_PUBKEY(file, NULL, 0, NULL);
+        fclose(file);
 }
 
 /**
@@ -83,7 +121,6 @@ void testSecrets(const unsigned char* aliceSecret, const unsigned char* bobSecre
         fprintf(stderr, "%s\n", b64_string );
         free(b64_string);
 }
-
 
 
 int main(){
@@ -111,17 +148,22 @@ int main(){
 
         // Generate new keys
         EVP_PKEY *alicekey, *bobkey;
-        //TODO 
-        
+        if(1 != EVP_PKEY_keygen_init(ctx)) 
+                handleErrors();
+        generateKeys(ctx, &alicekey, "alice.pub");
+        generateKeys(ctx, &bobkey, "bob.pub");
+
+
         //Receive public keys
         EVP_PKEY *bobPublicKey, *alicePublicKey;
-        //TODO
+        receivePublicKey(&alicePublicKey, "alice.pub");
+        receivePublicKey(&bobPublicKey, "bob.pub");
 
         unsigned char *bobSecret, *aliceSecret;
         size_t aliceSecretLength, bobSecretLength;
-        //TODO compute secret keys
+        computeSecret(alicekey, bobPublicKey, &aliceSecret, &aliceSecretLength); //Alice side
+        computeSecret(bobkey, alicePublicKey, &bobSecret, &bobSecretLength); //Bob side
 
-        //Testing and printing
         testSecrets(aliceSecret, bobSecret, aliceSecretLength, bobSecretLength);
 
         //freeing 
