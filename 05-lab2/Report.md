@@ -30,5 +30,21 @@ Sending "" to be signed:
 ```
 b'T0vUg8CHzYIJupRYQEMWQeLy6bgEkJYJngFUpwbTg1wFAGppiiUmn40t32ALaQqVUjFpsGgBtQWyJQnSeVTOBA=='
 ```
-This is essentially the same as `khash`
+This is essentially the same as `khash`.
+The signature is defined as:
 
+$$ sig \equiv r + H(R || A || M)s \mod l $$
+
+We know:
+1. $R$ the "left" half of the signature, which is defined as `khashMessage` in the implementation and would be equivalent to `khash` for an empty message
+2. $A$ is the public key
+3. $M$ is the empty string
+4. $H()$ is `sha512`
+5. $r = s$ because ln 364 is equivalent to ln 368 for an emtpy string (see point 1).
+6. $l$ is some large prime
+
+By factoring $r$, we find:
+
+$$ r \equiv s \equiv \frac{sig}{H(R || A || M)} \mod l $$
+
+So to forge a new signature we can use this $s$. 
