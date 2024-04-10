@@ -1,5 +1,6 @@
 # Lab2 - ICR
 Titus Abele
+Benjamin Mouchet
 
 ## Chall 1 
 
@@ -26,11 +27,23 @@ True
 
 ## Chall 2
 
+While looking at the new implementation, we discovered a vulnerability in the `sign()` function on line 360:
+```py
+khashMessage = self.H(privkey + msg, None, None)
+```
+This new value is used to calculate the first component of the signature, namely $R$. However, if we give an empty string to the signing algorithm (the hosted one), we should get an $R$ value from which we can extract the `khashMessage` value. Why this is a vulnerability comes to light when lookint at line 367:
+```py
+khash = self.H(privkey, None, None)
+```
+Because of the empty message, both `khashMessage` and `khash` are equal. This means that the resulting $s$ and $r$ values are also the same. We can use those to sign a new message, the private key is "stored" in them so we don't need it.  
+
+### Procedure
+
 Sending "" to be signed:
 ```
 b'T0vUg8CHzYIJupRYQEMWQeLy6bgEkJYJngFUpwbTg1wFAGppiiUmn40t32ALaQqVUjFpsGgBtQWyJQnSeVTOBA=='
 ```
-This is essentially the same as `khash`.
+
 The signature is defined as:
 
 $$ sig \equiv r + H(R || A || M)s \mod l $$
@@ -45,6 +58,50 @@ We know:
 
 By factoring $r$, we find:
 
-$$ r \equiv s \equiv \frac{sig}{H(R || A || M)} \mod l $$
+$$ r \equiv s \equiv \frac{sig}{1 +H(R || A || M)} \mod l $$
 
-So to forge a new signature we can use this $s$. 
+So to forge a new signature we can use this as our $s$. In the code, we need to first grab all the values from the empty message's signature:
+
+```py
+    Rraw, Sraw = sig[:pEd25519.b // 8], sig[pEd25519.b // 8:]
+    R, S = pEd25519.B.decode(Rraw), from_le(Sraw)
+    A = pEd25519.B.decode(pubkey)
+
+    # Calculate h = H(R || A || M) where M is the empty string
+    l = Edwards25519Point.stdbase().l()
+    h = from_le(pEd25519.H(Rraw + pubkey + empty_msg, None, False)) % l
+    h_inv = pow(1 + h, -1, l)
+
+    s = from_le(Sraw) * h_inv
+```
+
+While respecting every value's type and base. To find all the necessary functions (to encode, decode or convert) applied to the various values, we had a look at the implementation and copied some code from the `sign()` and `verify()` functions.
+
+```py
+    # Now we grab s, which is equal to r following the equation explained in point 6
+    s = from_le(Sraw) * h_inv
+
+    # The private key does not matter here
+    a = os.urandom(32)
+    kh_mess_new = pEd25519.H(a + flag, None, None)
+    r_new = from_le(pEd25519._PureEdDSA__clamp(kh_mess_new[:pEd25519.b // 8])) % l
+    
+    # R of sig_new
+    R_new = (pEd25519.B * r_new).encode()
+
+    # Calculate h.
+    h_new = from_le(Ed25519_inthash(R_new + pubkey + flag, None, False)) % l
+    S_new = to_bytes(((r_new + h_new * s) % l), pEd25519.b // 8, byteorder="little")
+ 
+    # Forge signature for the flag
+    forged_sig = R_new + S_new 
+```
+It's important to note that the private key used in the equation for the new `khashMessage` value is irrelevant. This is due to the fact that we have the valid $s$ value extracted from the empty message's $S$ component.
+
+The complete code is located in the `exploit()` function and should result in this:
+```bash
+$ python .\chall2.py
+Message b'' is verified: True
+Message b'My grade in ICR is 6.0' is verified: True
+```
+## Chall 3
