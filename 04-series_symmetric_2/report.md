@@ -39,6 +39,8 @@ We saw in class why, in CTR, nonce reuse can lead to:
 
 $$ (c_1 \oplus c_2) = (m_1 \oplus m_2)$$
 
+Additionnally, with a random nonce, this value drops significantly due to the birthday paradox.
+
 
 #### 3.
 ```
@@ -74,3 +76,16 @@ $$2^{96} \cdot 2^{64} = 2^{160} \gt\gt 2^{30}$$
 
 unique combinations per key period. 
 
+## Ex 2: IoT Scenarios
+```
+You are going to analyse two different IoT scenarios in which you will have to make algorithmic choices. To simplify, we will only consider the following five algorithms:
+
+* AES-ECB
+* AES-CBC
+* AES-CTR
+* AES-GCM
+* Chacha20-Poly1305
+```
+```
+1. The IoT device sends 256-bit messages to a recipient device. The ciphertext (including tags, IV, . . . ) should have the same size as the plaintext due to physical constraints. We are considering only passive adversaries. Devices do not have any memory except for storing the symmetric key. For each of the five algorithms, justify if it can be used in this scenario or not. You can also slightly modify them. What is your final proposition? Be precise and analyse the security of your answer.
+```
