@@ -491,12 +491,20 @@ def exploit():
     pubkey = b64decode(b'T0vUg8CHzYIJupRYQEMWQeLy6bgEkJYJngFUpwbTg1w=')
 
     # If we send "" to be signed we get
-    sig_empty = b64decode(b'T0vUg8CHzYIJupRYQEMWQeLy6bgEkJYJngFUpwbTg1wFAGppiiUmn40t32ALaQqVUjFpsGgBtQWyJQnSeVTOBA==')
+    sig = b64decode(b'T0vUg8CHzYIJupRYQEMWQeLy6bgEkJYJngFUpwbTg1wFAGppiiUmn40t32ALaQqVUjFpsGgBtQWyJQnSeVTOBA==')
     
+    R = sig[:32]
+    A = pubkey # We established this in point 1.
+    M = flag # The message that we want to sign
+    
+    data = R + A + M
+
+    H = Ed25519_inthash(data, None, None)
+
+    print("H = %s" % b64encode(H))
+
     
 
-    msg = b"Hello"
-    print("R_msg = %s" % b64encode(R_msg))
 
 
     
