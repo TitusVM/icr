@@ -489,29 +489,42 @@ def test():
 def exploit():
     ed = Ed25519()
     pubkey = b64decode(b'T0vUg8CHzYIJupRYQEMWQeLy6bgEkJYJngFUpwbTg1w=')
+    empty_msg = b""
 
     # If we send "" to be signed we get
     sig = b64decode(b'T0vUg8CHzYIJupRYQEMWQeLy6bgEkJYJngFUpwbTg1wFAGppiiUmn40t32ALaQqVUjFpsGgBtQWyJQnSeVTOBA==')
     
-    R = sig[:32]
-    A = pubkey # We established this in point 1.
-    M = flag # The message that we want to sign
+    #sanity check
+    print("Message", b64encode(empty_msg), "is verified:", ed.verify(pubkey, empty_msg, sig))
+
+    Rraw, Sraw = sig[:pEd25519.b // 8], sig[pEd25519.b // 8:]
+    R, S = pEd25519.B.decode(Rraw), from_le(Sraw)
+    A = pEd25519.B.decode(pubkey)
+
+    # Calculate h = H(R || A || M) where M is the empty string
+    l = Edwards25519Point.stdbase().l()
+    h = from_le(pEd25519.H(Rraw + pubkey + empty_msg, None, False)) % l
+
+    h_inv = pow(1 + h, -1, l)
+
+    # Now we grab r, which is equal to s
+    s = from_le(Sraw) * h_inv
+
+    # The private key does not matter here
+    a = os.urandom(32)
+    kh_mess_new = pEd25519.H(a + flag, None, None)
+    r_new = from_le(pEd25519._PureEdDSA__clamp(kh_mess_new[:pEd25519.b // 8])) % l
     
-    data = R + A + M
+    # R of sig_new
+    R_new = (pEd25519.B * r_new).encode()
 
-    H = Ed25519_inthash(data, None, None)
+    # Calculate h.
+    h_new = from_le(Ed25519_inthash(R_new + pubkey + flag, None, False)) % l
+    S_new = to_bytes(((r_new + h_new * s) % l), pEd25519.b // 8, byteorder="little")
+ 
+    # Forge signature for the flag
+    forged_sig = R_new + S_new    
+    print("Message", flag, "is verified:", ed.verify(pubkey, flag, forged_sig))
 
-    print("H = %s" % b64encode(H))
-
-    
-
-
-
-    
-    
-
-
-
-    
 
 exploit()
