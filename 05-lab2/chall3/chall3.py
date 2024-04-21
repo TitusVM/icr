@@ -363,8 +363,12 @@ class PureEdDSA(object):
         # Calculate r and R (R only used in encoded form).
         r = from_le(self.H(seed + msg, ctx, hflag)) % self.l
         R = (self.B * r).encode()
+
+        # Calculate the unique deterministic message date hash
+        msg_date_hash = self.H(R + msg + date)
+
         # Calculate h with date
-        h = from_le(self.H(R + pubkey + msg + date, ctx, hflag)) % self.l
+        h = from_le(self.H(pubkey + msg_date_hash, ctx, hflag)) % self.l
         # Calculate s.
         S = to_bytes(((r + h * a) % self.l), self.b // 8, byteorder="little")
         # The final signature is a concatenation of R and S.
@@ -388,8 +392,12 @@ class PureEdDSA(object):
         # Check parse results.
         if (R is None) or (A is None) or S >= self.l:
             return False
+            
+        # Calculate the unique deterministic message date hash
+        msg_date_hash = self.H(R + msg + date)
+        
         # Calculate h.
-        h = from_le(self.H(Rraw + pubkey + msg + date, ctx, hflag)) % self.l
+        h = from_le(self.H(pubkey + msg_date_hash, ctx, hflag)) % self.l
         # Calculate left and right sides of check eq.
         rhs = R + (A * h)
         lhs = self.B * S
@@ -486,4 +494,45 @@ def test():
     #sanity check
     print(ed.verify_date(pub,msg, date, sig))
 
-test()
+def exploit():
+    ed = Ed25519()
+    pubkey = b64decode(b'SnVjAVqJEiTd5O4XMyGAEfMCPDZ/BVorwgiRb4BHY8Q=')
+    msg = b"Some message"
+
+    # If we send "Some message" to be signed twice at two different times we get
+    sig_1 = b64decode(b'Nc8VF82kgHcThbgogglSadjyqBmd4PzyCc+MbKS1iycbxQL6DjGwgIuUCWnJqgTee/8hE3l8FeUUHxZJejaoAQ==')
+    sig_1_date = b'2024-04-21 11:24:34.278264'
+
+    sig_2 = b64decode(b'Nc8VF82kgHcThbgogglSadjyqBmd4PzyCc+MbKS1iyeYX4wmClzQmIF0PsnWcofDJlbDq0ktGAhvSl+jatBICw==')
+    sig_2_date = b'2024-04-21 11:25:05.656289'
+
+    #sanity check
+    print("Message 1:", b64encode(msg), "is verified:", ed.verify_date(pubkey, msg, sig_1_date, sig_1))
+    print("Message 2:", b64encode(msg), "is verified:", ed.verify_date(pubkey, msg, sig_2_date, sig_2))
+
+    # Extract Rraw and Sraw
+    Rraw1, Sraw1 = sig_1[:pEd25519.b // 8], sig_1[pEd25519.b // 8:]
+    R1, S1 = pEd25519.B.decode(Rraw1), from_le(Sraw1)
+
+    Rraw2, Sraw2 = sig_2[:pEd25519.b // 8], sig_2[pEd25519.b // 8:]
+    R2, S2 = pEd25519.B.decode(Rraw2), from_le(Sraw2)
+
+    # Calculate h = H(R || A || M) where M is the message
+    l = Edwards25519Point.stdbase().l()
+    h1 = from_le(pEd25519.H(Rraw1 + pubkey + msg + sig_1_date, None, False)) % l
+    h2 = from_le(pEd25519.H(Rraw2 + pubkey + msg + sig_2_date, None, False)) % l
+    
+    # And then s using the formula specified in the report
+    s = ((S1 - S2) * pow((h1 - h2), -1, l)) % l
+
+    # Forging new signature
+    sig_flag_date = str(datetime.datetime.utcnow()).encode()
+    R_new = (pEd25519.B * 0).encode()
+    h_new = from_le(pEd25519.H(R_new + pubkey + flag + sig_flag_date, None, False)) % l
+    S_new = to_bytes(((0 + h_new * s) % l), pEd25519.b // 8, byteorder="little")
+
+    forged_sig, sig_flag_date = (R_new + S_new, sig_flag_date)
+    print("Message", flag, "is verified:", ed.verify_date(pubkey, flag, sig_flag_date, forged_sig))
+
+
+exploit()

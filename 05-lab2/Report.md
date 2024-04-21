@@ -105,3 +105,70 @@ Message b'' is verified: True
 Message b'My grade in ICR is 6.0' is verified: True
 ```
 ## Chall 3
+The last implementation includes a timestamp with the signature. The timestamp is added as an additional security to the signature algorithm here:
+```py
+    date = str(datetime.datetime.utcnow()).encode()
+    ...
+
+    # Calculate h with date
+    h = from_le(self.H(R + pubkey + msg + date, ctx, hflag)) % self.l
+```
+This may seem like a smart move but what the coder failed to realise was that we can extract s (similar to what we did before) by sending two identical messages at different times instead of an empty one. This is thanks to the following equation:
+
+We know that:
+$$ sig \equiv r + H(R || A || M)s \mod l $$
+So from that:
+$$ sig_1 \equiv r_1​ + H(R_1​ || A || M)s \mod l$$
+$$ sig_2 \equiv r_2 + H(R_2 || A || M)s \mod l$$
+NB: The $r$ and consequently $R$ values differ because they incorporate the timestamp.
+
+Now we can solve for $s$ the private key:
+$$ s \equiv (sig_1 - r_1) \cdot (H(R_1​ || A || M))^{-1} \mod l $$
+$$ s \equiv (sig_2 - r_2) \cdot (H(R_2 || A || M))^{-1} \mod l $$
+Which can be transformed into:
+$$ s \equiv (sig_1 - r_1) \cdot (H(R_1​ || A || M))^{-1} \equiv (sig_2 - r_2) \cdot (H(R_2 || A || M))^{-1} \mod l $$
+$$ (sig_1 - r_1) \cdot (H(R_1​ || A || M))^{-1} \equiv (sig_2 - r_2) \cdot (H(R_2 || A || M))^{-1} \mod l $$
+And finally:
+$$ s \equiv ((sig1 - sig2) \cdot (H(R_1​ || A || M) - H(R_2 || A || M))^{-1})$$
+
+First we can extract the `a` value defined here:
+```py
+    # Expand key.
+    khash = self.H(privkey, None, None)
+    a = from_le(self.__clamp(khash[:self.b // 8]))
+```
+by looking at the difference between two signatures, specifically:
+```py
+    # Calculate h = H(R || A || M) where M is the message
+    l = Edwards25519Point.stdbase().l()
+    h1 = from_le(pEd25519.H(Rraw1 + pubkey + msg + sig_1_date, None, False)) % l
+    h2 = from_le(pEd25519.H(Rraw2 + pubkey + msg + sig_2_date, None, False)) % l
+    
+    # And then s using the formula specified above
+    s = ((S1 - S2) * pow((h1 - h2), -1, l)) % l
+```
+We can then proceed to trivially sign a new message using the extracted private key.
+The code for this can be found in the `exploit()` function.
+
+### Improving the implementation
+To improve the implementation and eliminate the vulnerability, we can simply hash the date with the message content before calculating our hash. 
+```py
+def sign_date(...):
+    ...
+    # Calculate the unique deterministic message date hash
+    msg_date_hash = self.H(R + msg + date)
+
+    # Calculate h with date
+    h = from_le(self.H(pubkey + msg_date_hash, ctx, hflag)) % self.l
+```
+And to verify we do the same:
+```py
+def verify_date(...):
+    ...
+    # Calculate the unique deterministic message date hash
+    msg_date_hash = self.H(R + msg + date)
+    
+    # Calculate h.
+    h = from_le(self.H(pubkey + msg_date_hash, ctx, hflag)) % self.l
+```
+This way the crucial values from our formula earlier are "hidden" and cannot be used to determine the private key. 
