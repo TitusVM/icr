@@ -363,6 +363,25 @@ class PureEdDSA(object):
         # Calculate r and R (R only used in encoded form).
         r = from_le(self.H(seed + msg, ctx, hflag)) % self.l
         R = (self.B * r).encode()
+        # Calculate h with date
+        h = from_le(self.H(R + pubkey + msg + date, ctx, hflag)) % self.l
+        # Calculate s.
+        S = to_bytes(((r + h * a) % self.l), self.b // 8, byteorder="little")
+        # The final signature is a concatenation of R and S.
+        return (R + S, date)
+   
+    def sign_date_hash(self, privkey, pubkey, msg, ctx, hflag):
+        date = str(datetime.datetime.utcnow()).encode()
+        if msg == flag:
+            return (b"No it isn't", date)
+        # Sign with key pair.
+        # Expand key.
+        khash = self.H(privkey, None, None)
+        a = from_le(self.__clamp(khash[:self.b // 8]))
+        seed = khash[self.b // 8:]
+        # Calculate r and R (R only used in encoded form).
+        r = from_le(self.H(seed + msg, ctx, hflag)) % self.l
+        R = (self.B * r).encode()
 
         # Calculate the unique deterministic message date hash
         msg_date_hash = self.H(R + msg + date)
@@ -373,11 +392,36 @@ class PureEdDSA(object):
         S = to_bytes(((r + h * a) % self.l), self.b // 8, byteorder="little")
         # The final signature is a concatenation of R and S.
         return (R + S, date)
-   
 
     
     
     def verify_date(self, pubkey, msg, date, sig, ctx, hflag):
+        # Verify signature with public key.
+        # Sanity-check sizes.
+        if len(sig) != self.b // 4:
+            return False
+        if len(pubkey) != self.b // 8:
+            return False
+        # Split signature into R and S, and parse.
+        Rraw, Sraw = sig[:self.b // 8], sig[self.b // 8:]
+        R, S = self.B.decode(Rraw), from_le(Sraw)
+        # Parse public key.
+        A = self.B.decode(pubkey)
+        # Check parse results.
+        if (R is None) or (A is None) or S >= self.l:
+            return False
+        # Calculate h.
+        h = from_le(self.H(Rraw + pubkey + msg + date, ctx, hflag)) % self.l
+        # Calculate left and right sides of check eq.
+        rhs = R + (A * h)
+        lhs = self.B * S
+        for _ in range(0, self.c):
+            lhs = lhs.double()
+            rhs = rhs.double()
+        # Check eq. holds?
+        return lhs == rhs
+    
+    def verify_date_hash(self, pubkey, msg, date, sig, ctx, hflag):
         # Verify signature with public key.
         # Sanity-check sizes.
         if len(sig) != self.b // 4:
