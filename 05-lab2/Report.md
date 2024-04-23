@@ -45,7 +45,7 @@ b'T0vUg8CHzYIJupRYQEMWQeLy6bgEkJYJngFUpwbTg1wFAGppiiUmn40t32ALaQqVUjFpsGgBtQWyJQ
 
 The signature is defined as:
 
-$$ sig \equiv r + H(R || A || M)s \mod l $$
+$$sig \equiv r + H(R || A || M)s \mod l$$
 
 We know:
 1. $R$ the "left" half of the signature, which is defined as `khashMessage` in the implementation and would be equivalent to `khash` for an empty message
@@ -57,7 +57,7 @@ We know:
 
 By factoring $r$, we find:
 
-$$ r \equiv s \equiv \frac{sig}{1 +H(R || A || M)} \mod l $$
+$$r \equiv s \equiv \frac{sig}{1 +H(R || A || M)} \mod l$$
 
 So to forge a new signature we can use this as our $s$. In the code, we need to first grab all the values from the empty message's signature:
 
@@ -115,20 +115,32 @@ The last implementation includes a timestamp with the signature. The timestamp i
 This may seem like a smart move but what the coder failed to realise was that we can extract s (similar to what we did before) by sending two identical messages at different times instead of an empty one. This is thanks to the following equation:
 
 We know that:
-$$ sig \equiv r + H(R || A || M)s \mod l $$
+
+$$sig \equiv r + H(R || A || M)s \mod l$$
+
 So from that:
-$$ sig_1 \equiv r_1​ + H(R_1​ || A || M)s \mod l$$
-$$ sig_2 \equiv r_2 + H(R_2 || A || M)s \mod l$$
+
+$$sig_1 \equiv r_1​ + H(R_1​ || A || M)s \mod l$$
+
+$$sig_2 \equiv r_2 + H(R_2 || A || M)s \mod l$$
+
 NB: The $r$ and consequently $R$ values differ because they incorporate the timestamp.
 
 Now we can solve for $s$ the private key:
-$$ s \equiv (sig_1 - r_1) \cdot (H(R_1​ || A || M))^{-1} \mod l $$
-$$ s \equiv (sig_2 - r_2) \cdot (H(R_2 || A || M))^{-1} \mod l $$
+
+$$s \equiv (sig_1 - r_1) \cdot (H(R_1​ || A || M))^{-1} \mod l$$
+
+$$s \equiv (sig_2 - r_2) \cdot (H(R_2 || A || M))^{-1} \mod l$$
+
 Which can be transformed into:
-$$ s \equiv (sig_1 - r_1) \cdot (H(R_1​ || A || M))^{-1} \equiv (sig_2 - r_2) \cdot (H(R_2 || A || M))^{-1} \mod l $$
-$$ (sig_1 - r_1) \cdot (H(R_1​ || A || M))^{-1} \equiv (sig_2 - r_2) \cdot (H(R_2 || A || M))^{-1} \mod l $$
+
+$$s \equiv (sig_1 - r_1) \cdot (H(R_1​ || A || M))^{-1} \equiv (sig_2 - r_2) \cdot (H(R_2 || A || M))^{-1} \mod l$$
+
+$$(sig_1 - r_1) \cdot (H(R_1​ || A || M))^{-1} \equiv (sig_2 - r_2) \cdot (H(R_2 || A || M))^{-1} \mod l$$
+
 And finally:
-$$ s \equiv ((sig1 - sig2) \cdot (H(R_1​ || A || M) - H(R_2 || A || M))^{-1})$$
+
+$$s \equiv ((sig1 - sig2) \cdot (H(R_1​ || A || M) - H(R_2 || A || M))^{-1})$$
 
 First we can extract the `a` value defined here:
 ```py
