@@ -1,6 +1,5 @@
 # Lab2 - ICR
 Titus Abele
-Benjamin Mouchet
 
 ## Chall 1 
 
@@ -149,6 +148,14 @@ by looking at the difference between two signatures, specifically:
 ```
 We can then proceed to trivially sign a new message using the extracted private key.
 The code for this can be found in the `exploit()` function.
+
+And when running it:
+```bash
+$ python chall3.py
+Message 1: b'U29tZSBtZXNzYWdl' is verified: True
+Message 2: b'U29tZSBtZXNzYWdl' is verified: True
+Message b'My grade in ICR is 6.0' is verified: True
+```
 
 ### Improving the implementation
 To improve the implementation and eliminate the vulnerability, we can simply hash the date with the message content before calculating our hash. 
