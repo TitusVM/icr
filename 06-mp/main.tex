@@ -22,12 +22,14 @@
   colback=gray!45,
 }
 
+% spell-checker: disable %
 \lstset{
     captionpos=b,
     commentstyle=\color{mygreen},
     basicstyle=\linespread{0.67}\ttfamily,
+    aboveskip=2em,
+    belowskip=1em,
 }
-
 \lstdefinestyle{bashStyle}{
     belowcaptionskip=1\baselineskip,
     breaklines=true,
@@ -38,6 +40,7 @@
     commentstyle=\itshape\color{purple!40!black},
     identifierstyle=\color{blue},
 }
+% spell-checker: enable %
 
 \begin{document}
 
@@ -49,14 +52,11 @@
 
 % \listoftables
 
-\pagebreak
 % Introduction
 \include{intro}
 
+\include{architecture}
 
-\pagebreak
-\section{Part b}
-
-etc
+\include{bib}
 
 \end{document}
