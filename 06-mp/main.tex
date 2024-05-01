@@ -1,0 +1,62 @@
+\documentclass{article}
+% General document formatting
+\usepackage[a4paper, total={5.5in, 7.5in}]{geometry}
+\usepackage[parfill]{parskip}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+
+\usepackage{xcolor}
+\usepackage[many]{tcolorbox}
+
+% Related to math
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+
+% % Referencing
+\usepackage{hyperref}
+
+\tcolorboxenvironment{lstlisting}{
+  spartan,
+  frame empty
+  boxsep=0mm,
+  left=1mm,right=1mm,top=-1mm,bottom=-1mm,
+  colback=gray!45,
+}
+
+\lstset{
+    captionpos=b,
+    commentstyle=\color{mygreen},
+    basicstyle=\linespread{0.67}\ttfamily,
+}
+
+\lstdefinestyle{bashStyle}{
+    belowcaptionskip=1\baselineskip,
+    breaklines=true,
+    frame=none,
+    numbers=none,
+    basicstyle=\footnotesize\ttfamily,
+    keywordstyle=\bfseries\color{green!40!black},
+    commentstyle=\itshape\color{purple!40!black},
+    identifierstyle=\color{blue},
+}
+
+\begin{document}
+
+\include{title}
+
+\tableofcontents
+\lstlistoflistings
+\listoffigures
+
+% \listoftables
+
+\pagebreak
+% Introduction
+\include{intro}
+
+
+\pagebreak
+\section{Part b}
+
+etc
+
+\end{document}
