@@ -4,9 +4,22 @@
 \usepackage[parfill]{parskip}
 \usepackage[utf8]{inputenc}
 \usepackage{listings}
+\usepackage{svg}
+\usepackage{float}
+\usepackage{caption} 
 
 \usepackage{xcolor}
 \usepackage[many]{tcolorbox}
+
+% Caption font
+\usepackage{titlesec}
+
+\titleformat*{\section}{\Large\bfseries\sffamily}
+\titleformat*{\subsection}{\large\bfseries\sffamily}
+\titleformat*{\subsubsection}{\itshape\bfseries\sffamily}
+
+\usepackage{etoolbox}
+\apptocmd{\thebibliography}{\raggedright}{}{}
 
 % Related to math
 \usepackage{amsmath,amssymb,amsfonts,amsthm}
@@ -42,7 +55,10 @@
 }
 % spell-checker: enable %
 
+
 \begin{document}
+
+\captionsetup{justification=centering}
 
 \include{title}
 

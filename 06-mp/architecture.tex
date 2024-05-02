@@ -1,1 +1,33 @@
 \section{Architecture}
+\subsection{Web Server}
+
+\begin{minipage}{0.44\textwidth}
+    A web server is an online machine that serves clients. Its purpose can be manifold. In our project, this web server will store files for users. They may connect to the server using some credentials (in our case a unique username and a password) and have access to their files as well as the files that have been shared with them by other users. In \autoref{fig:generalarchi} we outlined the general architecture of the server. The server prompts the client for credentials, the client provides them, the server can then verify the credentials and grant access to the storage. In this way, the client can connect from anywhere and on any device, without having to transport the entire storage. This is essentially what is commonly referred to as a cloud storage service.
+\end{minipage}
+\begin{minipage}{0.47\textwidth}
+    \begin{figure}[H]
+        \includesvg[inkscapelatex=false, scale=0.80]{resources/general_archi}
+        \caption{\label{fig:generalarchi} General architecture of a web server with file saving and sharing capabilities }
+    \end{figure}
+\end{minipage}
+
+
+The standard procedure to interact with the server is outlined in \autoref{fig:generalinteract}. As depicted, there are four components that need to be conceptualized.
+
+\begin{minipage}{1\textwidth}
+    \begin{figure}[H]
+        \centering
+        \includesvg[inkscapelatex=false, scale=0.81]{resources/general_interact.svg}
+        \caption{\label{fig:generalinteract} General interaction graph }
+    \end{figure}
+\end{minipage}
+
+\subsection{Storage}
+
+\begin{minipage}{1\textwidth}
+    \begin{figure}[H]
+        \centering
+        \includesvg[inkscapelatex=false]{resources/file_system.svg}
+        \caption{\label{fig:filesystem} A basic filesystem }
+    \end{figure}
+\end{minipage}

@@ -1,16 +1,16 @@
 \section*{Introduction}
 Before jumping into the theory behind a shared encrypted network file system, it is important to lay a foundation about what a file system is, why it requires sharing capabilities and why security is paramount. A file system (FS) manages and provides access for resources. Generally, resources are composed of folders containing files or other folders. This way, an organizational hierarchy of resources can be established.
     
-\lstinputlisting[label={lst:ubuntu-root}, caption=Ubuntu root folder, language=bash,style=bashStyle]{./listings/ubunturoot.sh}
+\lstinputlisting[label={lst:ubunturoot}, caption=Ubuntu root folder, language=bash,style=bashStyle]{./listings/ubunturoot.sh}
 
-Access should be handled so that some roles can access some resources, this is generally done by using dedicated roles such as administrators, owners, guests or even users. An example can be seen in \autoref{lst:ubuntu-root}, it shows all folders and files contained within the root directory of a machine running Ubuntu, a popular Linux distribution. The root directory is the top-level directory in the file system's hierarchy. Left of the resource names (\lstinline{boot}, \lstinline{dev}, \lstinline{etc}...) we can find their relative permissions. For instance, the \lstinline{boot} directory is marked as \lstinline{[drwxr-xr-x 4.0K]  boot} which means:
+Access should be handled so that some roles can access some resources, this is generally done by using dedicated roles such as administrators, owners, guests or even users. An example can be seen in \autoref{lst:ubunturoot}, it shows all folders and files contained within the root directory of a machine running Ubuntu, a popular Linux distribution. The root directory is the top-level directory in the file system's hierarchy. Left of the resource names (\lstinline{boot}, \lstinline{dev}, \lstinline{etc}...) we can find their relative permissions. For instance, the \lstinline{boot} directory is marked as \lstinline{[drwxr-xr-x 4.0K]  boot} which means:
 
 \begin{itemize}
     \item The \lstinline{d} in first position indicates the nature of the resource, in this case a directory.
     \item The pattern \lstinline{rwxr-xr-x} translates to the owner having read, write, and execute permissions, while the group and others have read and execute permissions only.
 \end{itemize}
 
-Each triplet (\lstinline{rwx}) relates to a specific permission class. In a Unix-like file system such as the one depicted in \autoref{lst:ubuntu-root}, these classes are defined in order as "Owner-Group-Others". This means that for the \lstinline{boot} directory:
+Each triplet (\lstinline{rwx}) relates to a specific permission class. In a Unix-like file system such as the one depicted in \autoref{lst:ubunturoot}, these classes are defined in order as "Owner-Group-Others". This means that for the \lstinline{boot} directory:
 
 \begin{itemize}
     \item The Owner has read (\lstinline{r}), write (\lstinline{w}) and execute (\lstinline{x}) permissions.
