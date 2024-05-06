@@ -31,3 +31,12 @@ The standard procedure to interact with the server is outlined in \autoref{fig:g
         \caption{\label{fig:filesystem} A basic filesystem }
     \end{figure}
 \end{minipage}
+
+The building blocks for a simple file system are as follows:
+\begin{itemize}
+    \item Folders are containers for other folders and resources.
+    \item Resources are bundles of information that manifest in the form of files.
+    \item A root folder which is the root node of the hierarchy that illustrates the file system. In \autoref{fig:filesystem} the root folder is the left most folder.
+\end{itemize}
+
+A file can therefore be defined as a unique place in the file system by a specific identifier which indicates the path one must travel to find it. To be able to retrieve the files in the green folder in \autoref{fig:filesystem}, one must start to go into the second folder in the root folder and then move to the first folder contained within. So if we translate this to a path, we would have something akin to \lstinline{\root\second_folder\first_folder} which could be defined as the unique identifier for the green folder. We may omit the \lstinline{\root} indicator because all resources are contained within the \lstinline{root} directory and also replace the descriptive names with incremental identification numbers (\lstinline{first_folder} would therefore carry the identifier \lstinline{0}, \lstinline{second_folder} would carry \lstinline{1} and so on). The resulting unique identifier for the green folder would therefore be: \lstinline{10}. Similarly, the blue folder is identified by \lstinline{00}. A file could be described in the same way.
