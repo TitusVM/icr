@@ -34,9 +34,36 @@ The standard procedure to interact with the server is outlined in \autoref{fig:g
 
 The building blocks for a simple file system are as follows:
 \begin{itemize}
-    \item Folders are containers for other folders and resources.
-    \item Resources are bundles of information that manifest in the form of files.
-    \item A root folder which is the root node of the hierarchy that illustrates the file system. In \autoref{fig:filesystem} the root folder is the left most folder.
+    \item Folders are containers for other folders and files.
+    \item Files are bundles of information.
+    \item A root folder is the root node of the hierarchy that illustrates the file system. In \autoref{fig:filesystem} the root folder is the left most folder.
 \end{itemize}
 
-A file can therefore be defined as a unique place in the file system by a specific identifier which indicates the path one must travel to find it. To be able to retrieve the files in the green folder in \autoref{fig:filesystem}, one must start to go into the second folder in the root folder and then move to the first folder contained within. So if we translate this to a path, we would have something akin to \lstinline{\root\second_folder\first_folder} which could be defined as the unique identifier for the green folder. We may omit the \lstinline{\root} indicator because all resources are contained within the \lstinline{root} directory and also replace the descriptive names with incremental identification numbers (\lstinline{first_folder} would therefore carry the identifier \lstinline{0}, \lstinline{second_folder} would carry \lstinline{1} and so on). The resulting unique identifier for the green folder would therefore be: \lstinline{10}. Similarly, the blue folder is identified by \lstinline{00}. A file could be described in the same way.
+Storage is handled by a server module which implements all the necessary tools for our model. It also provides types corresponding to the architecture we described above. The file structure is composed of a file name, an owner and some content. Added to the simple structure is a "signature" field, it will be crucial for ensuring trust in the provenance and the integrity of the file, more on that later. Secondly, the folder structure, in addition to name, owner and signature it also contains a list of folders, and a list of files.
+
+\subsubsection{Storage encryption}
+The filesystem is stored on a server. In this project, the server is exposed to active adversaries which means that the filesystem must be fully encrypted. The constraints of the project allow for the filesystem's hierarchy to leak which means that only file contents, file and folder names as well as owners must be encrypted. The signature must also be encrypted, this may seem strange but if this weren't the case, an attacker could potentially try all public keys on a resource until the signature verification algorithm verifies the given public key. This would tell the attacker whose file they just verified and may lead to unique id leakage, linking unique ids to usernames. Each folder additionally contains two separate lists: a list containing each folder's (that is inside the current folder) symmetric key and a list containing each file's (also contained in the current folder) symmetric key. These are used to encrypt and decrypt the files. 
+
+Because only the owner of a root folder on the server should be able to access all the contents of their root folder, symmetric encryption seems to be the ideal choice. It also provides no way for an active adversary to find a way of sneaking between the user and the server to eavesdrop on the communication or perform a man in the middle attack. Symmetric encryption dictates that a single master key encrypts the root folder
+
+To achieve symmetric encryption on this scale, we use a password. This password is not stored on the server. The user must remember it well. The password will be digested client-side to create a password hash. This hash can be used for two processes:
+\begin{itemize}
+    \item First, the login challenge. 
+    \item Second, the fetching of the encrypted root folder (containing all their files).
+\end{itemize}
+The process is divided into two separate processes to make it impossible for an attacker to get a free offline version of the encrypted resources. If there were no challenge and since we do not store passwords on the server, we would immediately send back the encrypted root folder without authenticating the user. Therefore, an attacker has an offline version of the encrypted root folder and can perform brute-force attacks without us ever knowing. The two parts will be explained in detail in the next section.
+
+\begin{minipage}{1\textwidth}
+    \begin{figure}[H]
+        \centering
+        \includesvg[inkscapelatex=false, scale=0.9]{resources/model_sequence.svg}
+        \caption{\label{fig:sequence_model} The sequence of our model  }
+    \end{figure}
+\end{minipage}
+
+\subsection{Authentication}
+The authentication part of the model relies on the User structure. A user can be created and added to the server's user list. When creating a user, we must also create its root folder which must be provided when adding the user to the server. This root folder carries the unique user id as a name and is therefore closely related to this user. We are willing to make unique identifiers public because they are nothing more than basic resource locators so we don't mind leaking them. No information can be extracted from them.
+\subsubsection{Root folder decryption and encryption}
+The sequence in \autoref{fig:sequence_model} shows the basic operation of the filesystem. Once a user has been created and provided to the server with a root folder, an additional challenge hash is required to make the two-step authentication possible. The user is not aware of this two-step process, he only witnesses the credential providing step and the receiving of data or failing (indicated by the red path).
+
+The challenge hash is required because it allows us to avoid storing passwords or their hashes on the server. This means that the server is never in contact with something directly derived from the password or more crucially, the password itself. The whole process of creating a user by providing root folder and a challenge hash ensures this ignorance. 
