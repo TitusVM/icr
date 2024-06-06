@@ -1,9 +1,12 @@
 \section{Implementation}
 \subsection{Framework}
 The implementation was completed in Rust. For the sake of brevity I will not go into depth on why Rust is awesome, you are just going to have to trust me. There are three crucial parts that need to be looked at in our custom filesystem framework:
-* password hashing
-* symmetric encryption
-* asymmetric encryption
+
+\begin{itemize}
+    \item password hashing
+    \item symmetric encryption
+    \item asymmetric encryption
+\end{itemize}
 
 \subsubsection{Password hashing}
 
@@ -56,7 +59,7 @@ To decrypt the root folders we must first login as Alice. We can then decrypt he
 As we can see in \autoref{fig:login_procedure}, Alice's root folder was decrypted. This happens client side so the server will not get any information.
 
 \subsubsection{Password change procedure}
-Alice is now logged in and she may change her password. To do this she first creates a new password, calculates a new corresponding password hash and challenge hash. She gives the challenge hash and the new password salt to the server for safekeeping. It automatically checks at each logout if those values are present. If they are, it updates its lists.
+Alice is now logged in and she may change her password. To do this she first creates a new password, calculates a new corresponding password hash and challenge hash. She gives the challenge hash and the new password salt to the server for safekeeping. In addition to the new values, she \textbf{must} provide the same "old" challenge hash she used to login because the logout procedure with password change will perform a similar authenticity process as the login procedure. If it didn't perform this check, someone could potentially change her password without her being logged in. It automatically checks at each logout if those values are present. If they are, it updates its lists.
 
 \begin{figure}[H]
     \centering
@@ -68,7 +71,7 @@ Alice is now logged in and she may change her password. To do this she first cre
 Again, all of the decryption and encryption with the new password happens client-side. The server never gets any additional information except for the new challenge hash and password salt. But alone, these are useless.
 
 \subsubsection{Sharing folder procedure}
-Alice wishes to share her "home" folder with Bob. For this, she grabs Bob's public key and asymmetrically encrypts it. Bob receives the encrypted folder, he can verify its signature with Alice's public key as to ensure integrity of the contents (preventing replay attacks for instance). He may then decrypt it with his private key. He can then do some work on the folder.
+Alice wishes to share her "home" folder with Bob. For this, she uses Bob's public key and asymmetrically encrypts it. She then signs the hole folder. Bob receives the encrypted folder, he can verify its signature with Alice's public key as to ensure integrity of the contents. He may then decrypt it with his private key. He can then do some work on the folder.
 
 \begin{figure}[H]
     \centering
